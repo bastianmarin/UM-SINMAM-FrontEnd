@@ -18,6 +18,9 @@ interface HeartRateStats {
 }
 
 function App() {
+  // API Base URL from environment variable
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+
   const [stats, setStats] = useState<HeartRateStats>({
     last5Minutes: 0,
     last15Minutes: 0,
@@ -37,7 +40,7 @@ function App() {
   // API Functions
   const fetchHeartRateStats = async () => {
     try {
-      const response = await fetch('/api/heart-rate/stats');
+      const response = await fetch(`${API_BASE_URL}/api/heart-rate/stats`);
       if (!response.ok) {
         throw new Error('Error al obtener estadísticas');
       }
@@ -50,7 +53,7 @@ function App() {
 
   const fetchHeartRateReadings = async () => {
     try {
-      const response = await fetch('/api/heart-rate/readings');
+      const response = await fetch(`${API_BASE_URL}/api/heart-rate/readings`);
       if (!response.ok) {
         throw new Error('Error al obtener lecturas');
       }

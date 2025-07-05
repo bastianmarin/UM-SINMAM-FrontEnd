@@ -1,5 +1,30 @@
 # SINMAM API - Formato de Datos Requeridos
 
+## Configuración Inicial
+
+### Variables de Entorno
+La aplicación utiliza un archivo `.env` para configurar el endpoint de la API.
+
+1. **Crear archivo `.env`:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Configurar la URL base de la API:**
+   ```env
+   VITE_API_BASE_URL=http://localhost:3001
+   ```
+
+3. **Ejemplos de configuración:**
+   - **Desarrollo local:** `http://localhost:3001`
+   - **Producción:** `https://api.sinmam.com`
+   - **Staging:** `https://staging-api.sinmam.com`
+
+### Importante:
+- La variable debe comenzar con `VITE_` para ser accesible en el frontend
+- Reinicie el servidor de desarrollo después de cambiar el `.env`
+- No incluya barra diagonal final en la URL
+
 ## Endpoints Necesarios
 
 ### 1. Estadísticas de Ritmo Cardíaco
