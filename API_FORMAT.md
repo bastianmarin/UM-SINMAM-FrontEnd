@@ -12,12 +12,12 @@ La aplicación utiliza un archivo `.env` para configurar el endpoint de la API.
 
 2. **Configurar la URL base de la API:**
    ```env
-   VITE_API_BASE_URL=http://localhost:3001
+   VITE_API_BASE_URL=https://um-sinmam-api.iroak.cl
    ```
 
 3. **Ejemplos de configuración:**
    - **Desarrollo local:** `http://localhost:3001`
-   - **Producción:** `https://api.sinmam.com`
+   - **Producción:** `https://um-sinmam-api.iroak.cl`
    - **Staging:** `https://staging-api.sinmam.com`
 
 ### Importante:

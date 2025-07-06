@@ -19,7 +19,7 @@ interface HeartRateStats {
 
 function App() {
   // API Base URL from environment variable
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://um-sinmam-api.iroak.cl';
 
   const [stats, setStats] = useState<HeartRateStats>({
     last5Minutes: 0,
