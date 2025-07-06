@@ -40,7 +40,7 @@ function App() {
   // API Functions
   const fetchHeartRateStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/heart-rate/stats`);
+      const response = await fetch(`${API_BASE_URL}api/heart-rate/stats`);
       if (!response.ok) {
         throw new Error('Error al obtener estadísticas');
       }
@@ -53,7 +53,7 @@ function App() {
 
   const fetchHeartRateReadings = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/heart-rate/readings`);
+      const response = await fetch(`${API_BASE_URL}api/heart-rate/readings`);
       if (!response.ok) {
         throw new Error('Error al obtener lecturas');
       }
