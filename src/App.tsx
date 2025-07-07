@@ -126,6 +126,18 @@ function App() {
     return 'border-green-200 bg-green-50';
   };
 
+  // Utilidad para mostrar hora en UTC-4 (Chile)
+  function formatToChileTime(dateOrString: string | Date) {
+    const date = typeof dateOrString === 'string' ? new Date(dateOrString) : dateOrString;
+    // UTC-4: Santiago, Chile
+    return date.toLocaleTimeString('es-CL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'America/Santiago',
+    });
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
@@ -222,7 +234,7 @@ function App() {
                     <span className="text-sm font-medium">Última actualización:</span>
                   </div>
                   <div className="text-2xl font-bold text-gray-800 mt-2">
-                    {stats.lastUpdated}
+                    {stats.lastUpdated ? formatToChileTime(stats.lastUpdated) : '—'}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     Se actualiza cada 15 segundos
@@ -329,7 +341,7 @@ function App() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center space-x-2">
                               <Clock className="w-4 h-4 text-gray-400" />
-                              <span className="text-sm font-medium text-gray-900">{reading.hour}</span>
+                              <span className="text-sm font-medium text-gray-900">{reading.timestamp ? formatToChileTime(reading.timestamp) : reading.hour}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
