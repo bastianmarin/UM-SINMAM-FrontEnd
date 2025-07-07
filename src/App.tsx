@@ -5,16 +5,21 @@ interface HeartRateReading {
   id: number;
   hour: string;
   pulse: number;
+  spo2: number | null;
   isRisky: boolean;
   timestamp: string;
 }
 
 interface HeartRateStats {
-  last5Minutes: number;
-  last15Minutes: number;
-  last30Minutes: number;
-  current: number;
+  last5Minutes: number | null;
+  last15Minutes: number | null;
+  last30Minutes: number | null;
+  current: number | null;
   lastUpdated: string;
+  avgSpo2_5min?: number | null;
+  avgSpo2_15min?: number | null;
+  avgSpo2_30min?: number | null;
+  spo2?: number | null;
 }
 
 function App() {
@@ -22,15 +27,19 @@ function App() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://um-sinmam-api.iroak.cl';
 
   const [stats, setStats] = useState<HeartRateStats>({
-    last5Minutes: 0,
-    last15Minutes: 0,
-    last30Minutes: 0,
-    current: 0,
-    lastUpdated: new Date().toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit' 
-    })
+    last5Minutes: null,
+    last15Minutes: null,
+    last30Minutes: null,
+    current: null,
+    lastUpdated: new Date().toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }),
+    avgSpo2_5min: null,
+    avgSpo2_15min: null,
+    avgSpo2_30min: null,
+    spo2: null,
   });
 
   const [readings, setReadings] = useState<HeartRateReading[]>([]);
@@ -174,171 +183,195 @@ function App() {
         {/* Content - only show when not loading */}
         {!loading && (
           <>
-        {/* Current Pulse - Hero Section */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center p-4 bg-red-100 rounded-full mb-4">
-              <Activity className="w-12 h-12 text-red-600" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">SINMAM - Pulso Cardíaco Actual</h2>
-            <div className="text-6xl font-bold text-red-600 mb-4">
-              {stats.current}
-              <span className="text-2xl font-normal text-gray-500 ml-2">BPM</span>
-            </div>
-            <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium mb-6 ${
-              stats.current > 100 ? 'bg-red-100 text-red-800' :
-              stats.current < 60 ? 'bg-blue-100 text-blue-800' :
-              'bg-green-100 text-green-800'
-            }`}>
-              {stats.current > 100 ? 'Elevado' : stats.current < 60 ? 'Bajo' : 'Normal'}
-            </div>
-            
-            {/* Last Updated Section */}
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <div className="flex items-center justify-center space-x-2 text-gray-600">
-                <RefreshCw className="w-5 h-5" />
-                <span className="text-sm font-medium">Última actualización:</span>
+            {/* Current Pulse - Hero Section */}
+            <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center p-4 bg-red-100 rounded-full mb-4">
+                  <Activity className="w-12 h-12 text-red-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-700 mb-2">SINMAM - Pulso Cardíaco Actual</h2>
+                <div className="text-6xl font-bold text-red-600 mb-4">
+                  {stats.current ?? '—'}
+                  <span className="text-2xl font-normal text-gray-500 ml-2">BPM</span>
+                </div>
+                <div className="text-xl font-semibold text-blue-700 mb-2">
+                  SpO₂: <span className="font-bold">{stats.spo2 ?? '—'}%</span>
+                </div>
+                <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium mb-6 ${
+                  stats.current == null
+                    ? 'bg-gray-100 text-gray-400'
+                    : stats.current > 100
+                      ? 'bg-red-100 text-red-800'
+                      : stats.current < 60
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-green-100 text-green-800'
+                }`}>
+                  {stats.current == null
+                    ? '—'
+                    : stats.current > 100
+                      ? 'Elevado'
+                      : stats.current < 60
+                        ? 'Bajo'
+                        : 'Normal'}
+                </div>
+                
+                {/* Last Updated Section */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center justify-center space-x-2 text-gray-600">
+                    <RefreshCw className="w-5 h-5" />
+                    <span className="text-sm font-medium">Última actualización:</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-800 mt-2">
+                    {stats.lastUpdated}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Se actualiza cada 15 segundos
+                  </div>
+                </div>
               </div>
-              <div className="text-2xl font-bold text-gray-800 mt-2">
-                {stats.lastUpdated}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Se actualiza cada 15 segundos
-              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Time-based Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className={`bg-white rounded-xl shadow-lg p-6 border-2 ${getStatCardColor(stats.last5Minutes)}`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-gray-600" />
-                <h3 className="font-semibold text-gray-700">Últimos 5 minutos</h3>
+            {/* Time-based Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className={`bg-white rounded-xl shadow-lg p-6 border-2 ${getStatCardColor(stats.last5Minutes ?? 0)}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-5 h-5 text-gray-600" />
+                    <h3 className="font-semibold text-gray-700">Últimos 5 minutos</h3>
+                  </div>
+                  <TrendingUp className="w-4 h-4 text-gray-400" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {stats.last5Minutes ?? '—'}
+                  <span className="text-sm font-normal text-gray-500 ml-1">BPM</span>
+                </div>
+                <div className="text-blue-700 text-sm font-semibold mb-1">
+                  SpO₂: <span className="font-bold">{stats.avgSpo2_5min ?? '—'}%</span>
+                </div>
+                <p className="text-sm text-gray-600">Promedio reciente</p>
               </div>
-              <TrendingUp className="w-4 h-4 text-gray-400" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stats.last5Minutes}
-              <span className="text-sm font-normal text-gray-500 ml-1">BPM</span>
-            </div>
-            <p className="text-sm text-gray-600">Promedio reciente</p>
-          </div>
-
-          <div className={`bg-white rounded-xl shadow-lg p-6 border-2 ${getStatCardColor(stats.last15Minutes)}`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-gray-600" />
-                <h3 className="font-semibold text-gray-700">Últimos 15 minutos</h3>
+              <div className={`bg-white rounded-xl shadow-lg p-6 border-2 ${getStatCardColor(stats.last15Minutes ?? 0)}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-5 h-5 text-gray-600" />
+                    <h3 className="font-semibold text-gray-700">Últimos 15 minutos</h3>
+                  </div>
+                  <TrendingUp className="w-4 h-4 text-gray-400" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {stats.last15Minutes ?? '—'}
+                  <span className="text-sm font-normal text-gray-500 ml-1">BPM</span>
+                </div>
+                <div className="text-blue-700 text-sm font-semibold mb-1">
+                  SpO₂: <span className="font-bold">{stats.avgSpo2_15min ?? '—'}%</span>
+                </div>
+                <p className="text-sm text-gray-600">Promedio medio</p>
               </div>
-              <TrendingUp className="w-4 h-4 text-gray-400" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stats.last15Minutes}
-              <span className="text-sm font-normal text-gray-500 ml-1">BPM</span>
-            </div>
-            <p className="text-sm text-gray-600">Promedio medio</p>
-          </div>
-
-          <div className={`bg-white rounded-xl shadow-lg p-6 border-2 ${getStatCardColor(stats.last30Minutes)}`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-gray-600" />
-                <h3 className="font-semibold text-gray-700">Últimos 30 minutos</h3>
+              <div className={`bg-white rounded-xl shadow-lg p-6 border-2 ${getStatCardColor(stats.last30Minutes ?? 0)}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-5 h-5 text-gray-600" />
+                    <h3 className="font-semibold text-gray-700">Últimos 30 minutos</h3>
+                  </div>
+                  <TrendingUp className="w-4 h-4 text-gray-400" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {stats.last30Minutes ?? '—'}
+                  <span className="text-sm font-normal text-gray-500 ml-1">BPM</span>
+                </div>
+                <div className="text-blue-700 text-sm font-semibold mb-1">
+                  SpO₂: <span className="font-bold">{stats.avgSpo2_30min ?? '—'}%</span>
+                </div>
+                <p className="text-sm text-gray-600">Promedio extendido</p>
               </div>
-              <TrendingUp className="w-4 h-4 text-gray-400" />
             </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stats.last30Minutes}
-              <span className="text-sm font-normal text-gray-500 ml-1">BPM</span>
+
+            {/* Readings Table */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-lg font-semibold text-gray-900">Historial de Lecturas</h3>
+                <p className="text-sm text-gray-600 mt-1">Registro detallado de mediciones</p>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Hora
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Pulso Cardíaco
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        SpO₂
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ¿Riesgoso?
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {readings.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                          <Heart className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p>No hay lecturas disponibles</p>
+                          <p className="text-sm mt-1">Los datos aparecerán aquí cuando estén disponibles</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      readings.map((reading) => (
+                        <tr key={reading.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              <Clock className="w-4 h-4 text-gray-400" />
+                              <span className="text-sm font-medium text-gray-900">{reading.hour}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              <Heart className="w-4 h-4 text-red-500" />
+                              <span className={`text-sm font-bold ${getRiskColor(reading.pulse)}`}>{reading.pulse ?? '—'} BPM</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-blue-700 font-semibold">
+                            {reading.spo2 ?? '—'}%
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                              reading.pulse > 100 ? 'bg-red-100 text-red-800' :
+                              reading.pulse < 60 ? 'bg-blue-100 text-blue-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {reading.pulse > 100 ? 'Elevado' : reading.pulse < 60 ? 'Bajo' : 'Normal'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              {reading.isRisky && <AlertTriangle className="w-4 h-4 text-red-500" />}
+                              <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full border ${getRiskBadgeColor(reading.isRisky)}`}>
+                                {reading.isRisky ? 'Sí' : 'No'}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <p className="text-sm text-gray-600">Promedio extendido</p>
-          </div>
-        </div>
 
-        {/* Readings Table */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-900">Historial de Lecturas</h3>
-            <p className="text-sm text-gray-600 mt-1">Registro detallado de mediciones</p>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Hora
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pulso Cardíaco
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ¿Riesgoso?
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {readings.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                      <Heart className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                      <p>No hay lecturas disponibles</p>
-                      <p className="text-sm mt-1">Los datos aparecerán aquí cuando estén disponibles</p>
-                    </td>
-                  </tr>
-                ) : (
-                  readings.map((reading) => (
-                  <tr key={reading.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-900">{reading.hour}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <Heart className="w-4 h-4 text-red-500" />
-                        <span className={`text-sm font-bold ${getRiskColor(reading.pulse)}`}>
-                          {reading.pulse} BPM
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        reading.pulse > 100 ? 'bg-red-100 text-red-800' :
-                        reading.pulse < 60 ? 'bg-blue-100 text-blue-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {reading.pulse > 100 ? 'Elevado' : reading.pulse < 60 ? 'Bajo' : 'Normal'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        {reading.isRisky && <AlertTriangle className="w-4 h-4 text-red-500" />}
-                        <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full border ${getRiskBadgeColor(reading.isRisky)}`}>
-                          {reading.isRisky ? 'Sí' : 'No'}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Footer Info */}
-        <div className="mt-8 text-center text-sm text-gray-500">
-          <p>Los datos se actualizan automáticamente cada 15 segundos</p>
-          <p className="mt-1">Consulte con su médico si observa lecturas anormales persistentes</p>
-        </div>
-        </>
+            {/* Footer Info */}
+            <div className="mt-8 text-center text-sm text-gray-500">
+              <p>Los datos se actualizan automáticamente cada 15 segundos</p>
+              <p className="mt-1">Consulte con su médico si observa lecturas anormales persistentes</p>
+            </div>
+          </>
         )}
       </div>
     </div>
